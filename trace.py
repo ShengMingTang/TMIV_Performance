@@ -96,9 +96,9 @@ def genPose(bndbox, vel, sampleRate, time, wt_max, outDir):
 '''
 dir: input directory in generate()
 play: True then pause between frames
-isFromUnrealCord: True if coordinate system is captured from Unreal Engine directly
+isFromHMDCord: True if coordinate system is captured from Unreal Engine directly
 '''
-def takePhoto(dir, play=False, isFromUnrealCord=False):
+def takePhoto(dir, play=False, isFromHMDCord=False, take=False):
     client = airsim.VehicleClient()
     client.confirmConnection()
     dir = Path(dir)
@@ -112,49 +112,47 @@ def takePhoto(dir, play=False, isFromUnrealCord=False):
         for i, row in enumerate(reader):
             t, x, y, z, roll, pitch, yaw = [float(r) for r in row]
             roll, pitch, yaw = math.radians(roll), math.radians(pitch), math.radians(yaw)
-            if isFromUnrealCord:
-                x, y, z = y/100, x/100, -z/100
-
+            if isFromHMDCord:
+                x, y, z = x, y, -z
             client.simSetVehiclePose(airsim.Pose(airsim.Vector3r(x, y, z), airsim.to_quaternion(pitch, roll, yaw)), True)
-            img = client.simGetImage("0", airsim.ImageType.Scene)
-            img = cv2.imdecode(airsim.string_to_uint8_array(img), cv2.IMREAD_UNCHANGED)
-            img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-            cv2.imwrite(str(imgDir/f'{i}.png'), img)
+            if take:
+                img = client.simGetImage("0", airsim.ImageType.Scene)
+                img = cv2.imdecode(airsim.string_to_uint8_array(img), cv2.IMREAD_UNCHANGED)
+                img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+                cv2.imwrite(str(imgDir/f'{i}.png'), img)
             if play:
                 time.sleep(t - lastT)
                 lastT = t
 
 if __name__ == '__main__':
+    # Plot
+    # ==============================================================================================================================
+    takePhoto(dir=Path.home()/'TMIV_Performance'/'HMD_TEST_Random', play=False, isFromHMDCord=True, take=False)
+    
     # Generate
     # ==============================================================================================================================
-    OUT_DIR = 'C:\\Users\\shengming\\temp'
-    IN_DIR = OUT_DIR
-    # IN_DIR = 'C:\\Users\\shengming\\temp_RFU'
-    # IN_DIR = 'C:\\Users\\shengming\\temp_NED_RPY'
+    # OUT_DIR = Path.home()/'TMIV_Performance'/'data'
+    # BND_BOX = [
+    #     [-3, 3], # min/max X
+    #     [-3, 3], # min/max Y
+    #     [-5,-3], # min/max Z
+    #     [0,0], # min/max Pitch
+    #     [0,0], # min/max Yaw
+    #     [0, 60], # min/max Roll
+    # ]
+    # VEL = [
+    #     [1e-4, 1e-3], # minVelTrans, maxVelTrans
+    #     [1, 30], # minVelRot, maxVelRot
+    # ]
+    # TIME = 5
+    # WT_MAX = 2
 
-    BND_BOX = [
-        [-3, 3], # min/max X
-        [-3, 3], # min/max Y
-        [-5,-3], # min/max Z
-        [0,0], # min/max Pitch
-        [0,0], # min/max Yaw
-        [0, 60], # min/max Roll
-    ]
-    VEL = [
-        [1e-4, 1e-3], # minVelTrans, maxVelTrans
-        [1, 30], # minVelRot, maxVelRot
-    ]
-    TIME = 5
-    WT_MAX = 2
-
-    SAMPLE_RATE = 30 # samepls/sec
-    data = genPose(
-        bndbox= BND_BOX, vel=VEL,
-        sampleRate=SAMPLE_RATE, time=TIME, wt_max=WT_MAX, outDir=OUT_DIR
-    )
-
-    takePhoto(IN_DIR, True)
-    
+    # SAMPLE_RATE = 30 # samepls/sec
+    # data = genPose(
+    #     bndbox= BND_BOX, vel=VEL,
+    #     sampleRate=SAMPLE_RATE, time=TIME, wt_max=WT_MAX, outDir=OUT_DIR
+    # )
+   
     # Plot
     # ==============================================================================================================================
     # fig = plt.figure()
