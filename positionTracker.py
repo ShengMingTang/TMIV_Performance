@@ -12,4 +12,4 @@ client.confirmConnection()
 while True:
     pose = client.simGetVehiclePose()
     print(pose)
-    time.sleep(0.2)
+    time.sleep(1)
