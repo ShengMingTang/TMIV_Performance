@@ -1,4 +1,4 @@
-from trace import *
+from trace import * 
 from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
@@ -98,4 +98,9 @@ Settings.json
 
 # Run
 # ==============================================================================================================================
-takePhoto(dir=Path.home()/'TMIV_Performance'/'data', play=True, take=False)
+# takePhoto(dir=Path.home()/'TMIV_Performance'/'YuanJun', play=False, take=True)
+
+# Collect Ground Truth from VR captured
+root = Path.home()/'TMIV_Performance'/'YuanJun'
+RESOLUTION = [1280, 720]
+truncateCovertPng2Yuv(root/'pose.csv', root/'img', root/'outImg', RESOLUTION, 82, 82+90)

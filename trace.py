@@ -7,7 +7,8 @@ import csv
 import cv2
 import time
 import math
-
+import os
+import json
 '''
 Coordinate Transform:
 Unreal to AirSim: x, y, z = y/100, x,/100 -z/100
@@ -64,6 +65,16 @@ def genPose(bndbox, vel, sampleRate, time, wt_max, outDir):
     data = []
     if outDir.exists() is False:
         outDir.mkdir()
+    with open(str(outDir/'para.json'), 'w') as f:
+        j = {
+            'bndbox': bndbox,
+            'vel': vel,
+            'sampleRate': sampleRate,
+            'time': time,
+            'wt_max': wt_max,
+            'outDir': outDir
+        }
+        json.dump(j, f)
     with open(str(outDir/'pose.csv'), 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['t', 'x', 'y', 'z', 'roll', 'pitch', 'yaw'])
@@ -71,7 +82,7 @@ def genPose(bndbox, vel, sampleRate, time, wt_max, outDir):
             x, y, z, roll, pitch, yaw = pose 
             writer.writerow([i*(1/sampleRate), x, y, z, roll, pitch, yaw])
             data.append([x, y, z, roll, pitch, yaw])
-        return data
+    return data
 '''
 dir: input directory in generate()
 play: True then pause between frames
@@ -107,3 +118,27 @@ def takePhoto(dir, play=False, take=False):
             if play:
                 time.sleep(t - lastT)
                 lastT = t
+
+def truncateCovertPng2Yuv(csvPath, inImgDir, outDir, resolution, start, end):
+    with open(csvPath) as f:
+        outCsv = str(outDir / 'pose.csv')
+        inImgDir = Path(inImgDir)
+        outDir = Path(outDir)
+        outDir.mkdir(exist_ok=True)
+        with open(outCsv, 'w', newline='') as fw:
+            writer = csv.writer(fw)
+            rows = csv.reader(f)
+            headers = next(rows)
+            writer.writerow(headers)
+            for i, row in zip(range(end), rows):
+                if i >= start and i < end:
+                    inFilename = str(inImgDir/f'{i}.png')
+                    outFilename = str(outDir/f'{i}_{resolution[0]}x{resolution[1]}_yuv420p10le.yuv')
+                    writer.writerow(row)
+                    os.system(
+                        f"powershell ffmpeg -i {inFilename} -pix_fmt yuv420p10le {outFilename}"
+                    )
+                    os.system(
+                        f"type {outFilename} >> {str(outDir)}\GT_texture_{resolution[0]}x{resolution[1]}_yuv420p10le.yuv"
+                    )
+                
